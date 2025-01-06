@@ -1,22 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Servidor Activo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 20%;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-    </style>
+    <title>Spring Boot WebSocket</title>
+    <!-- Carga de SockJS y STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/dist/stomp.min.js"></script>
 </head>
 <body>
-<h1>¡El servidor está corriendo correctamente!</h1>
-<p>Si ves este mensaje, el servidor Spring Boot está funcionando en el puerto 8080.</p>
+<h1>WebSocket Chat</h1>
+<input type="text" id="message" placeholder="Escribe tu mensaje..."/>
+<button onclick="sendMessage()">Enviar</button>
+
+<h2>Mensajes Enviados</h2>
+<div id="messages"></div>
+
+<script>
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/ws');  // URL de conexión WebSocket
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Conectado: ' + frame);
+            stompClient.subscribe('/topic/messages', function (messageOutput) {
+                showMessage(JSON.parse(messageOutput.body).content);
+            });
+        });
+    }
+
+    function sendMessage() {
+        var messageContent = document.getElementById('message').value;
+        if (messageContent) {
+            stompClient.send("/app/chat", {}, JSON.stringify({ 'content': messageContent }));
+            document.getElementById('message').value = '';  // Limpiar el campo de mensaje
+        }
+    }
+
+    function showMessage(message) {
+        var messagesDiv = document.getElementById('messages');
+        var messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        messagesDiv.appendChild(messageElement);
+    }
+
+    window.onload = function () {
+        connect();  // Establecer la conexión WebSocket cuando se carga la página
+    };
+</script>
 </body>
 </html>

@@ -4,13 +4,12 @@ public class Message {
 
     private String content;
 
-    public Message() {
-    }
-
+    // Constructor
     public Message(String content) {
         this.content = content;
     }
 
+    // Getter y Setter
     public String getContent() {
         return content;
     }

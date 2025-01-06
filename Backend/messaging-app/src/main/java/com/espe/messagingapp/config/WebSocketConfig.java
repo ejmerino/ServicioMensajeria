@@ -1,5 +1,8 @@
 package com.espe.messagingapp.config;
 
+import com.espe.messagingapp.model.Message;
+import com.espe.messagingapp.service.MessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,6 +16,9 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+
+    @Autowired
+    private MessageService messageService; // Inyecta el servicio que guarda los mensajes
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -28,6 +34,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
             public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
                 // Log cuando se recibe un mensaje
                 System.out.println("Mensaje recibido: " + message.getPayload());
+
+                // Guarda el mensaje en MongoDB
+                messageService.saveMessage(new Message(message.getPayload().toString()));
 
                 // Envía el mensaje recibido de vuelta al cliente
                 session.sendMessage(new TextMessage("Mensaje recibido: " + message.getPayload()));

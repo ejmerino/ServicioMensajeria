@@ -1,17 +1,31 @@
 package com.espe.messagingapp.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.espe.messagingapp.model.Message;
+import com.espe.messagingapp.repository.MessageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 @RestController
 public class MessageController {
 
-    @PostMapping("/send-message")
-    public String sendMessage(@RequestBody Message message) {
-        // Aquí puedes guardar el mensaje en la base de datos o realizar otras acciones
-        return "Mensaje recibido: " + message.getContent();
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @PostMapping("/send")
+    public void sendMessage(@RequestBody Message message, WebSocketSession session) {
+        // Guardar el mensaje en MongoDB
+        messageRepository.save(message);
+
+        // Log de mensaje
+        System.out.println("Mensaje recibido: " + message.getContent());
+
+        try {
+            // Enviar respuesta al cliente
+            session.sendMessage(new TextMessage("Mensaje recibido: " + message.getContent()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

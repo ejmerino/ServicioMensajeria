@@ -1,17 +1,17 @@
 package com.espe.messagingapp.controller;
 
-import com.espe.messagingapp.model.Message;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+import com.espe.messagingapp.model.Message;
+
+@RestController
 public class MessageController {
 
-    // Recibe el mensaje desde el cliente y lo reenvía a todos los suscriptores
-    @MessageMapping("/chat")
-    @SendTo("/topic/messages")
-    public Message sendMessage(Message message) throws Exception {
-        return message;  // El mensaje es enviado a los clientes suscritos
+    @PostMapping("/send-message")
+    public String sendMessage(@RequestBody Message message) {
+        // Aquí puedes guardar el mensaje en la base de datos o realizar otras acciones
+        return "Mensaje recibido: " + message.getContent();
     }
 }

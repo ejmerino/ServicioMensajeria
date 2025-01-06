@@ -1,25 +1,54 @@
 package com.espe.messagingapp.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Configura el broker simple para que los mensajes se distribuyan en los canales adecuados
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/app");
-    }
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // Registra un WebSocketHandler en la URL /ws
+        registry.addHandler(new WebSocketHandler() {
+            @Override
+            public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+                // Log cuando la conexión WebSocket se establece
+                System.out.println("Conexión WebSocket establecida: " + session.getId());
+            }
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Configura el endpoint WebSocket
-        registry.addEndpoint("/ws").withSockJS();
+            @Override
+            public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+                // Log cuando se recibe un mensaje
+                System.out.println("Mensaje recibido: " + message.getPayload());
+
+                // Envía el mensaje recibido de vuelta al cliente
+                session.sendMessage(new TextMessage("Mensaje recibido: " + message.getPayload()));
+            }
+
+            @Override
+            public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+                // Log cuando ocurre un error en la conexión WebSocket
+                System.out.println("Error en WebSocket: " + exception.getMessage());
+            }
+
+            @Override
+            public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+                // Log cuando la conexión WebSocket se cierra
+                System.out.println("Conexión WebSocket cerrada: " + session.getId());
+            }
+
+            @Override
+            public boolean supportsPartialMessages() {
+                return false;  // No soporta mensajes parciales
+            }
+        }, "/ws").setAllowedOrigins("*"); // Se permite cualquier origen
     }
 }

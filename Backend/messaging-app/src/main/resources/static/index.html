@@ -3,57 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spring Boot WebSocket</title>
-    <!-- Asegúrate de que estas URLs sean accesibles -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/dist/stomp.min.js"></script>
+    <title>WebSocket Messaging</title>
 </head>
 <body>
-<h1>WebSocket Chat</h1>
-<input type="text" id="message" placeholder="Escribe tu mensaje..."/>
-<button onclick="sendMessage()">Enviar</button>
+<h1>WebSocket Messaging</h1>
 
-<h2>Mensajes Enviados</h2>
-<div id="messages"></div>
+<div id="messages">
+    <h2>Mensajes Enviados:</h2>
+    <ul id="messageList"></ul>
+</div>
+
+<div>
+    <input type="text" id="messageInput" placeholder="Escribe tu mensaje">
+    <button onclick="sendMessage()">Enviar</button>
+</div>
 
 <script>
-    var stompClient = null;
+    var socket = new WebSocket("ws://localhost:8080/ws");
+    var messageInput = document.getElementById('messageInput');
+    var messageList = document.getElementById('messageList');
 
-    // Conexión WebSocket
-    function connect() {
-        var socket = new SockJS('/ws');  // URL de conexión WebSocket
-        stompClient = Stomp.over(socket);
+    // Evento cuando la conexión WebSocket se abre
+    socket.onopen = function() {
+        console.log("Conectado al WebSocket");
+    };
 
-        // Conectar al WebSocket
-        stompClient.connect({}, function (frame) {
-            console.log('Conectado: ' + frame);
-            stompClient.subscribe('/topic/messages', function (messageOutput) {
-                showMessage(JSON.parse(messageOutput.body).content);
-            });
-        });
-    }
+    // Evento cuando se recibe un mensaje desde el servidor
+    socket.onmessage = function(event) {
+        console.log("Mensaje recibido del servidor: " + event.data);
+        displayMessage(event.data);  // Muestra el mensaje recibido en la UI
+    };
 
-    // Enviar mensaje
+    // Evento cuando la conexión WebSocket se cierra
+    socket.onclose = function() {
+        console.log("Conexión WebSocket cerrada");
+    };
+
+    // Función para enviar el mensaje
     function sendMessage() {
-        var messageContent = document.getElementById('message').value;
-        if (messageContent) {
-            stompClient.send("/app/chat", {}, JSON.stringify({ 'content': messageContent }));
-            document.getElementById('message').value = '';  // Limpiar el campo de mensaje
+        var message = messageInput.value;
+        if (message) {
+            console.log("Enviando mensaje: " + message);
+            socket.send(message);  // Envía el mensaje al servidor WebSocket
+            messageInput.value = '';  // Limpia el campo de entrada
+        } else {
+            alert("Por favor, escribe un mensaje.");
         }
     }
 
-    // Mostrar mensajes en el div
-    function showMessage(message) {
-        var messagesDiv = document.getElementById('messages');
-        var messageElement = document.createElement('div');
-        messageElement.textContent = message;
-        messagesDiv.appendChild(messageElement);
+    // Función para mostrar el mensaje en la página
+    function displayMessage(message) {
+        var li = document.createElement('li');
+        li.textContent = message;
+        messageList.appendChild(li);
     }
-
-    // Iniciar conexión cuando la página cargue
-    window.onload = function () {
-        connect();
-    };
 </script>
 </body>
 </html>

@@ -26,8 +26,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(new WebSocketHandler() {
             @Override
             public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-                // Log cuando la conexión WebSocket se establece
-                System.out.println("Conexión WebSocket establecida: " + session.getId());
+                // Mensaje en el servidor cuando un usuario se conecta
+                System.out.println("Usuario conectado: " + session.getId());
             }
 
             @Override
@@ -50,8 +50,8 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
             @Override
             public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-                // Log cuando la conexión WebSocket se cierra
-                System.out.println("Conexión WebSocket cerrada: " + session.getId());
+                // Mensaje en el servidor cuando un usuario se desconecta
+                System.out.println("Usuario desconectado: " + session.getId());
             }
 
             @Override

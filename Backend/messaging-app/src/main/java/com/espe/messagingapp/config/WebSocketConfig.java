@@ -55,20 +55,46 @@ public class WebSocketConfig implements WebSocketConfigurer {
                     if ("JOIN".equals(messageData.get("type"))) {
                         // Si el mensaje es de tipo "JOIN", guarda el nombre de usuario
                         String username = messageData.get("username");
-                        userSessions.put(session, username);
+                        userSessions.put(session, username);  // Guarda la sesión del usuario y su nombre
                         System.out.println("Usuario registrado: " + username + " en sesión " + session.getId());
 
                         // Notificar la lista actualizada de usuarios
                         notifyUsers(username, "conectó");
-                    } else {
-                        // Guarda el mensaje en MongoDB
+                    } else if ("MESSAGE".equals(messageData.get("type"))) {
                         messageService.saveMessage(new Message(payload));
-                        // Envía el mensaje recibido a todos los usuarios conectados
+
+                        // Enviar el mensaje a todos los usuarios conectados
                         broadcastMessage(payload);
+                        System.out.println("Mensaje enviado a todos los usuarios.");
+
+                    } else if ("PRIVATE_MESSAGE".equals(messageData.get("type"))) {
+                        String recipientSessionId = messageData.get("toSession");  // Obtén la sesión del destinatario (si existe)
+                        WebSocketSession recipientSession = findSessionById(recipientSessionId);
+
+                        if (recipientSession != null) {
+                            // Guarda el mensaje en MongoDB
+                            messageService.saveMessage(new Message(payload));
+
+                            // Enviar el mensaje al usuario destinatario
+                            recipientSession.sendMessage(new TextMessage(payload));
+                            System.out.println("Mensaje enviado a: " + recipientSessionId);
+                        } else {
+                            System.out.println("Sesion no encontrada.");
+                        }
+
                     }
                 } catch (Exception e) {
                     System.out.println("Error procesando mensaje: " + e.getMessage());
                 }
+            }
+
+            // Función para encontrar la sesión por su ID
+            private WebSocketSession findSessionById(String sessionId) {
+                return userSessions.entrySet().stream()
+                        .filter(entry -> entry.getKey().getId().equals(sessionId))
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElse(null);
             }
 
             @Override
@@ -124,7 +150,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
                             "username", username
                     ));
                 }
-                
+
                 try {
                     String usersMessage = objectMapper.writeValueAsString(Map.of(
                             "type", "USERS",

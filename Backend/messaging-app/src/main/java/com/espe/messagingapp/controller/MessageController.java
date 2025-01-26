@@ -23,7 +23,7 @@ public class MessageController {
 
         try {
             // Enviar respuesta al cliente
-            session.sendMessage(new TextMessage("Mensaje recibido: " + message.getContent()));
+            session.sendMessage(new TextMessage(message.getContent()));
         } catch (Exception e) {
             e.printStackTrace();
         }

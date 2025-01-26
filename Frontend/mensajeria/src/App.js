@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { motion } from 'framer-motion'; // Animaciones suaves para los mensajes
 
+
 function App() {
   const [username, setUsername] = useState('');
   const [message, setMessage] = useState('');
@@ -10,15 +11,17 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const messageEndRef = useRef(null);
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080/ws');
+    const ws = new WebSocket(apiBaseUrl);
 
     ws.onopen = () => {
       console.log('Conectado al servidor WebSocket');
     };
 
     ws.onmessage = (event) => {
+      console.log('Mensaje recibido:', event.data);
       const incomingMessage = JSON.parse(event.data);
       console.log('Mensaje recibido:', incomingMessage);
 

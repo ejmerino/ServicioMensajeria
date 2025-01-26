@@ -2,6 +2,7 @@ package com.espe.messagingapp.config;
 
 import com.espe.messagingapp.model.Message;
 import com.espe.messagingapp.service.MessageService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -14,11 +15,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -62,7 +59,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
                         System.out.println("Usuario registrado: " + username + " en sesión " + session.getId());
 
                         // Notificar la lista actualizada de usuarios
-                        notifyUsers();
+                        notifyUsers(username, "conectó");
                     } else {
                         // Guarda el mensaje en MongoDB
                         messageService.saveMessage(new Message(payload));
@@ -83,9 +80,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
             public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
                 String username = userSessions.remove(session);
                 activeSessions.remove(session);
-                System.out.println("Usuario desconectado: " + session.getId() + " (Usuario: " + username + ")");
-                // Notificar la lista actualizada de usuarios
-                notifyUsers();
+                if (username != null) {
+                    System.out.println("Usuario desconectado: " + session.getId() + " (Usuario: " + username + ")");
+                    // Notificar la lista actualizada de usuarios
+                    notifyUsers(username, "desconectó");
+                }
             }
 
             @Override
@@ -109,12 +108,28 @@ public class WebSocketConfig implements WebSocketConfigurer {
             }
 
             // Método para notificar a todos los usuarios de las sesiones actuales
-            private void notifyUsers() {
-                List<String> usernames = userSessions.values().stream().collect(Collectors.toList());
+            private void notifyUsers(String usernameChange, String action) throws JsonProcessingException {
+                List<Map<String, Object>> userSessionsJson = new ArrayList<>(); // Lista de mapas, no de cadenas
+
+                for (Map.Entry<WebSocketSession, String> entry : userSessions.entrySet()) {
+                    WebSocketSession session = entry.getKey();
+                    String username = entry.getValue();
+
+                    // Realiza alguna acción con 'session' y 'username'
+                    System.out.println("Sesion: " + session.getId() + ", Usuario: " + username);
+
+                    // Agregar el mapa directamente, sin serializarlo a un string
+                    userSessionsJson.add(Map.of(
+                            "session", session.getId(),
+                            "username", username
+                    ));
+                }
+                
                 try {
                     String usersMessage = objectMapper.writeValueAsString(Map.of(
                             "type", "USERS",
-                            "users", usernames
+                            "users", userSessionsJson,
+                            "message", "El usuario " + usernameChange + " se " + action + "."
                     ));
 
                     broadcastMessage(usersMessage);
